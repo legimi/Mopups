@@ -1,12 +1,12 @@
-﻿using CoreGraphics;
-
-using Microsoft.Maui.Controls.Compatibility.Platform.iOS;
-
+﻿using Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;
+using Microsoft.Maui.Platform;
 using Mopups.Interfaces;
 using Mopups.Pages;
 using Mopups.Platforms.MacCatalyst;
+using UIKit;
+using Application = Microsoft.Maui.Controls.Application;
+using VisualElement = Microsoft.Maui.Controls.VisualElement;
 
-using UIKit; 
 namespace Mopups.MacCatalyst.Implementation;
 
 internal class MacOSMopups : IPopupPlatform
@@ -36,8 +36,17 @@ internal class MacOSMopups : IPopupPlatform
 
         if (IsiOS13OrNewer)
         {
-            var connectedScene = UIApplication.SharedApplication.ConnectedScenes.ToArray().FirstOrDefault(x => x.ActivationState == UISceneActivationState.ForegroundActive);
-            if (connectedScene != null && connectedScene is UIWindowScene windowScene)
+            UIScene connectedScene = null;
+
+            if (page.Parent is { Handler.MauiContext: not null }) {
+                var nativeMainPage = page.Parent.ToPlatform(page.Parent.Handler.MauiContext);
+                connectedScene = nativeMainPage.Window.WindowScene;
+            }
+
+            if (connectedScene == null) 
+                connectedScene = UIApplication.SharedApplication.ConnectedScenes.ToArray().FirstOrDefault(
+                    x => x.ActivationState == UISceneActivationState.ForegroundActive);
+            if (connectedScene is UIWindowScene windowScene)
                 window = new PopupWindow(windowScene);
             else
                 window = new PopupWindow();
@@ -56,7 +65,7 @@ internal class MacOSMopups : IPopupPlatform
         window.WindowLevel = UIWindowLevel.Normal;
         window.MakeKeyAndVisible();
 
-        handler.ViewController.ModalPresentationStyle = UIModalPresentationStyle.OverCurrentContext;
+        handler.ViewController.ModalPresentationStyle = UIKit.UIModalPresentationStyle.OverCurrentContext;
         handler.ViewController.ModalTransitionStyle = UIModalTransitionStyle.CoverVertical;
         
 
