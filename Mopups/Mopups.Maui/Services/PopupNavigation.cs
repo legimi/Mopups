@@ -130,8 +130,10 @@ public class PopupNavigation : IPopupNavigation
 
             Popping?.Invoke(this, new PopupNavigationEventArgs(page, animate));
             await page.DisappearingAnimation();
-            page.SendDisappearing();
-            await PopupPlatform.RemoveAsync(page);
+            page.SendDisappearing(); 
+            var removeTask = PopupPlatform.RemoveAsync(page);
+            var delayTask = Task.Delay(TimeSpan.FromMilliseconds(500));
+            await Task.WhenAny(removeTask, delayTask);
             page.DisposingAnimation();
 
             _popupStack.Remove(page);
