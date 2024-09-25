@@ -141,6 +141,7 @@ public class PopupNavigation : IPopupNavigation
             }
             else
             {
+                // note this delay is required on android it can be that activity was destroyed and AndroidMopups.PostAsync cannot complete. So WhenAny assures that removing page will finish after 1 seconde.
                 var delayTask = Task.Delay(TimeSpan.FromSeconds(1));
                 await Task.WhenAny(removeTask, delayTask);
             }
