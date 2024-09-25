@@ -1,5 +1,4 @@
 ﻿using AsyncAwaitBestPractices;
-
 using Mopups.Events;
 using Mopups.Interfaces;
 using Mopups.Pages;
@@ -94,16 +93,16 @@ public class PopupNavigation : IPopupNavigation
         }
     }
 
-    public Task PopAsync(bool animate = true)
+    public Task PopAsync(bool animate = true, bool cleaning = false)
     {
 		animate = animate && Animations.AnimationHelper.SystemAnimationsEnabled;
 
 		return _popupStack.Count <= 0
             ? throw new InvalidOperationException("PopupStack is empty")
-            : RemovePageAsync(PopupStack[PopupStack.Count - 1], animate);
+            : RemovePageAsync(PopupStack[PopupStack.Count - 1], animate, cleaning);
     }
 
-    public Task RemovePageAsync(PopupPage page, bool animate = true)
+    public Task RemovePageAsync(PopupPage page, bool animate = true, bool cleaning = false)
     {
 		animate = animate && Animations.AnimationHelper.SystemAnimationsEnabled;
 
@@ -129,11 +128,23 @@ public class PopupNavigation : IPopupNavigation
             }
 
             Popping?.Invoke(this, new PopupNavigationEventArgs(page, animate));
-            await page.DisappearingAnimation();
-            page.SendDisappearing(); 
+            if (animate)
+            {
+                await page.DisappearingAnimation();
+            }
+
+            page.SendDisappearing();
             var removeTask = PopupPlatform.RemoveAsync(page);
-            var delayTask = Task.Delay(TimeSpan.FromMilliseconds(500));
-            await Task.WhenAny(removeTask, delayTask);
+            if (cleaning)
+            {
+                await Task.CompletedTask;
+            }
+            else
+            {
+                var delayTask = Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.WhenAny(removeTask, delayTask);
+            }
+
             page.DisposingAnimation();
 
             _popupStack.Remove(page);
@@ -141,4 +152,3 @@ public class PopupNavigation : IPopupNavigation
         }
     }
 }
-
