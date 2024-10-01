@@ -10,7 +10,8 @@ public class PopupPageHandler : PageHandler
 
     public PopupPageHandler()
     {
-        SetMauiContext(MauiApplication.Current.Application.Windows[0].Handler.MauiContext);
+        var mauiContext = new MauiContext(MauiApplication.Current.Services, Platform.CurrentActivity);
+        SetMauiContext(mauiContext);
     }
 
     public PopupPageHandler(IMauiContext context)
@@ -38,4 +39,3 @@ public class PopupPageHandler : PageHandler
         base.DisconnectHandler(platformView);
     }
 }
-
