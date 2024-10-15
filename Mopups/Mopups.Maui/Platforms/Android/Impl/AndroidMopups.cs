@@ -1,16 +1,17 @@
-﻿using Android.Views;
+﻿using Android.App;
+using Android.Views;
 using Android.Widget;
 using AsyncAwaitBestPractices;
 using Mopups.Interfaces;
 using Mopups.Pages;
 using Mopups.Services;
+using Application = Microsoft.Maui.Controls.Application;
+using View = Android.Views.View;
 
 namespace Mopups.Droid.Implementation;
 
 public class AndroidMopups : IPopupPlatform
 {
-    private static FrameLayout? DecoreView => Platform.CurrentActivity?.Window?.DecorView as FrameLayout;
-
     public static bool SendBackPressed(Action? backPressedHandler = null)
     {
         var popupNavigationInstance = MopupService.Instance;
@@ -59,11 +60,12 @@ public class AndroidMopups : IPopupPlatform
         {
             HandleAccessibility(false, page.DisableAndroidAccessibilityHandling, page.Parent as Page);
 
-            DecoreView?.RemoveView(renderer.PlatformView as Android.Views.View);
+            var decorView = ((Activity?) ((View?)renderer.PlatformView)?.Context)?.Window?.DecorView as FrameLayout;
+            decorView?.RemoveView(renderer.PlatformView as Android.Views.View);
             renderer.DisconnectHandler(); //?? no clue if works
             page.Parent = null;
 
-            return PostAsync(DecoreView);
+            return PostAsync(decorView);
         }
 
         return Task.CompletedTask;
