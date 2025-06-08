@@ -1,4 +1,4 @@
-﻿using Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;
+﻿using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using Mopups.Interfaces;
 using Mopups.Pages;
@@ -30,7 +30,7 @@ internal class MacOSMopups : IPopupPlatform
         if (keyWindow?.WindowLevel == UIWindowLevel.Normal)
             keyWindow.WindowLevel = -1;
 
-        var handler = (PopupPageHandler)IPopupPlatform.GetOrCreateHandler<PopupPageHandler>(page);
+        var handler = (PageHandler)GetOrCreateMacHandler(page);
 
         PopupWindow window;
 
@@ -92,7 +92,7 @@ internal class MacOSMopups : IPopupPlatform
         if (page == null)
             throw new Exception("Popup page is null");
 
-        var handler = page.Handler as PopupPageHandler;
+        var handler = page.Handler as PageHandler;
         var viewController = handler?.ViewController;
 
         await Task.Delay(50);
@@ -101,7 +101,7 @@ internal class MacOSMopups : IPopupPlatform
 
         if (handler != null && viewController != null && !viewController.IsBeingDismissed)
         {
-            var window = viewController.View?.Window;
+            var window = viewController.View?.Window as PopupWindow;
             page.Parent = null;
 
             if (window != null)
@@ -115,6 +115,7 @@ internal class MacOSMopups : IPopupPlatform
                     rvc.Dispose();
                 }
 
+                window.RestoreAccessibility();
                 window.RootViewController = null;
                 window.Hidden = true;
 
@@ -153,4 +154,24 @@ internal class MacOSMopups : IPopupPlatform
         DisposeModelAndChildrenHandlers((VisualElement)view);
     }
 
+    private static IViewHandler GetOrCreateMacHandler(VisualElement bindable)
+    {
+        if (bindable.Handler != null)
+            return bindable.Handler;
+
+        var mauiContext = Application.Current?.Windows?.FirstOrDefault()?.Handler?.MauiContext;
+
+        if (mauiContext != null)
+        {
+            var handlerType = mauiContext.Handlers.GetHandlerType(bindable.GetType());
+            if (handlerType != null)
+            {
+                var handler = (IViewHandler)Activator.CreateInstance(handlerType);
+                bindable.Handler = handler;
+                return handler;
+            }
+        }
+
+        return bindable.Handler ??= new PopupPageHandler();
+    }
 }

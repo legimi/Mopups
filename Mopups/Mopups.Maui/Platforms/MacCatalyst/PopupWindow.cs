@@ -10,16 +10,27 @@ namespace Mopups.Platforms.MacCatalyst
     {
         public PopupWindow(IntPtr handle) : base(handle)
         {
+            SetupAccessibility();
         }
 
         public PopupWindow()
         {
-
+            SetupAccessibility();
         }
 
         public PopupWindow(UIWindowScene uiWindowScene) : base(uiWindowScene)
         {
+            SetupAccessibility();
+        }
 
+        private void SetupAccessibility()
+        {
+            AccessibilityViewIsModal = true;
+        }
+
+        public void RestoreAccessibility()
+        {
+            AccessibilityViewIsModal = false;
         }
 
         public override UIView HitTest(CGPoint point, UIEvent? uievent)
