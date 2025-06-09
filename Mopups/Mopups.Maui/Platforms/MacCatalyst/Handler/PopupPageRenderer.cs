@@ -1,20 +1,14 @@
 ﻿using CoreGraphics;
-
 using Foundation;
+using Microsoft.Maui.Handlers;
 using Mopups.Pages;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using UIKit;
 
 namespace Mopups.Platforms.MacCatalyst
 {
     internal class PopupPageRenderer : UIViewController
     {
-        private PopupPageHandler? _renderer;
+        private PageHandler? _renderer;
         private readonly UIGestureRecognizer _tapGestureRecognizer;
         private NSObject? _willChangeFrameNotificationObserver;
         private NSObject? _willHideNotificationObserver;
@@ -22,9 +16,11 @@ namespace Mopups.Platforms.MacCatalyst
 
         internal CGRect KeyboardBounds { get; private set; } = CGRect.Empty;
 
-        public PopupPageHandler? Handler => _renderer;
+        public PageHandler? Handler => _renderer;
 
-        public PopupPageRenderer(PopupPageHandler handler)
+        public override bool CanBecomeFirstResponder => true;
+
+        public PopupPageRenderer(PageHandler handler)
         {
             _renderer = handler;
 
@@ -74,7 +70,7 @@ namespace Mopups.Platforms.MacCatalyst
 
             void UpdateSize(PopupPageRenderer handler)
             {
-                var currentElement = ((PopupPage)Handler.VirtualView);
+                var currentElement = (PopupPage)Handler.VirtualView;
 
                 if (handler.Handler.PlatformView?.Superview?.Frame == null || currentElement == null)
                     return;
@@ -109,6 +105,34 @@ namespace Mopups.Platforms.MacCatalyst
             ModalTransitionStyle = UIModalTransitionStyle.CoverVertical;
 
             View?.AddGestureRecognizer(_tapGestureRecognizer);
+        }
+
+        public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent evt)
+        {
+            var handled = false;
+            foreach (var press in presses)
+            {
+                if (press.Key != null)
+                {
+                    var keyCode = press.Key.KeyCode;
+
+                    switch (keyCode)
+                    {
+                        case UIKeyboardHidUsage.KeyboardEscape:
+                            if (Handler?.VirtualView is PopupPage popupPage)
+                            {
+                                handled = popupPage.SendEscapeKeyPressed();
+                            }
+
+                            break;
+                    }
+                }
+            }
+
+            if (handled == false)
+            {
+                base.PressesBegan(presses, evt);
+            }
         }
 
         public override void ViewDidUnload()

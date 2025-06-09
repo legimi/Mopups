@@ -1,9 +1,9 @@
-﻿using AsyncAwaitBestPractices;
+﻿using System.Windows.Input;
+using AsyncAwaitBestPractices;
 using Mopups.Animations;
 using Mopups.Animations.Base;
 using Mopups.Enums;
 using Mopups.Services;
-using System.Windows.Input;
 
 namespace Mopups.Pages;
 
@@ -13,6 +13,8 @@ public partial class PopupPage : ContentPage
 
 
     public event EventHandler? BackgroundClicked;
+
+    public event EventHandler? EscapeKeyPressed;
 
     internal Task? AppearingTransactionTask { get; set; }
 
@@ -66,6 +68,14 @@ public partial class PopupPage : ContentPage
         set => SetValue(CloseWhenBackgroundIsClickedProperty, value);
     }
 
+    public static readonly BindableProperty CloseWhenEscapeIsClickedProperty = BindableProperty.Create(nameof(CloseWhenEscapeIsClicked), typeof(bool), typeof(PopupPage), true);
+
+    public bool CloseWhenEscapeIsClicked
+    {
+        get => (bool)GetValue(CloseWhenEscapeIsClickedProperty);
+        set => SetValue(CloseWhenEscapeIsClickedProperty, value);
+    }
+
     public static readonly BindableProperty BackgroundInputTransparentProperty = BindableProperty.Create(nameof(BackgroundInputTransparent), typeof(bool), typeof(PopupPage), false);
 
     public bool BackgroundInputTransparent
@@ -106,6 +116,24 @@ public partial class PopupPage : ContentPage
         set => SetValue(BackgroundClickedCommandParameterProperty, value);
     }
 
+    public static readonly BindableProperty EscapeKeyCommandProperty =
+        BindableProperty.Create(nameof(EscapeKeyCommand), typeof(ICommand), typeof(PopupPage));
+
+    public ICommand EscapeKeyCommand
+    {
+        get => (ICommand)GetValue(EscapeKeyCommandProperty);
+        set => SetValue(EscapeKeyCommandProperty, value);
+    }
+
+    public static readonly BindableProperty EscapeKeyCommandParameterProperty =
+        BindableProperty.Create(nameof(EscapeKeyCommandParameter), typeof(object), typeof(PopupPage));
+
+    public object EscapeKeyCommandParameter
+    {
+        get => GetValue(EscapeKeyCommandParameterProperty);
+        set => SetValue(EscapeKeyCommandParameterProperty, value);
+    }
+    
     public static readonly BindableProperty DisableAndroidAccessibilityHandlingProperty = BindableProperty.Create(nameof(DisableAndroidAccessibilityHandling), typeof(bool), typeof(PopupPage), false);
 
     public bool DisableAndroidAccessibilityHandling
@@ -296,6 +324,30 @@ public partial class PopupPage : ContentPage
             MopupService.Instance.RemovePageAsync(this).SafeFireAndForget();
             return true;
         }
+
+        return false;
+    }
+
+    protected virtual bool OnEscapeKeyPressed()
+    {
+        return CloseWhenEscapeIsClicked;
+    }
+
+    internal bool SendEscapeKeyPressed()
+    {
+        EscapeKeyPressed?.Invoke(this, EventArgs.Empty);
+        if (EscapeKeyCommand?.CanExecute(EscapeKeyCommandParameter) == true)
+        {
+            EscapeKeyCommand.Execute(EscapeKeyCommandParameter);
+            return true;
+        }
+
+        if (OnEscapeKeyPressed())
+        {
+            MopupService.Instance.RemovePageAsync(this).SafeFireAndForget();
+            return true;
+        }
+
         return false;
     }
 }
