@@ -68,6 +68,14 @@ public partial class PopupPage : ContentPage
         set => SetValue(CloseWhenBackgroundIsClickedProperty, value);
     }
 
+    public static readonly BindableProperty CloseWhenEscapeIsClickedProperty = BindableProperty.Create(nameof(CloseWhenEscapeIsClicked), typeof(bool), typeof(PopupPage), true);
+
+    public bool CloseWhenEscapeIsClicked
+    {
+        get => (bool)GetValue(CloseWhenEscapeIsClickedProperty);
+        set => SetValue(CloseWhenEscapeIsClickedProperty, value);
+    }
+
     public static readonly BindableProperty BackgroundInputTransparentProperty = BindableProperty.Create(nameof(BackgroundInputTransparent), typeof(bool), typeof(PopupPage), false);
 
     public bool BackgroundInputTransparent
@@ -322,7 +330,7 @@ public partial class PopupPage : ContentPage
 
     protected virtual bool OnEscapeKeyPressed()
     {
-        return true;
+        return CloseWhenEscapeIsClicked;
     }
 
     internal bool SendEscapeKeyPressed()
