@@ -5,6 +5,9 @@ using Size = Windows.Foundation.Size;
 using Mopups.Pages;
 using WinPopup = global::Microsoft.UI.Xaml.Controls.Primitives.Popup;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml;
+using Thickness = Microsoft.Maui.Thickness;
+using WinSys = Windows.System;
 
 namespace Mopups.Platforms.Windows
 {
@@ -21,7 +24,9 @@ namespace Mopups.Platforms.Windows
         {
             this.handler = handler;
             this.Loaded += OnLoaded;
+            this.Loaded += SetInitialFocus;
             this.Unloaded += OnUnloaded;
+            this.KeyDown += OnKeyDown;
         }
 
         private void OnKeyboardHiding(InputPane sender, InputPaneVisibilityEventArgs args)
@@ -79,6 +84,8 @@ namespace Mopups.Platforms.Windows
 
             DeviceDisplay.Current.MainDisplayInfoChanged -= OnDisplayInfoChanged;
             PointerPressed -= OnBackgroundClick;
+            this.Loaded -= SetInitialFocus;
+            this.KeyDown -= OnKeyDown;
 
             // Not sure off hand the replacement on these 
             //var inputPane = InputPane.GetForCurrentView();
@@ -135,6 +142,45 @@ namespace Mopups.Platforms.Windows
                 //    capturedElement.ForceLayout();
                 //});
             }
+        }
+
+        private void SetInitialFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            var firstFocusable = FindFirstFocusableElement(this);
+            if (firstFocusable != null)
+            {
+                firstFocusable.Focus(FocusState.Programmatic);
+            }
+        }
+
+        private void OnKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == WinSys.VirtualKey.Escape)
+            {
+                CurrentElement.SendEscapeKeyPressed();
+                e.Handled = true;
+            }
+        }
+
+        private static FrameworkElement? FindFirstFocusableElement(DependencyObject parent)
+        {
+            if (parent == null) 
+                return null;
+
+            var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (var i = 0; i < childCount; i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+                
+                if (child is FrameworkElement { IsTabStop: true } element)
+                    return element;
+
+                var result = FindFirstFocusableElement(child);
+                if (result != null) 
+                    return result;
+            }
+
+            return null;
         }
     }
 }
